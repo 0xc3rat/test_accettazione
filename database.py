@@ -60,9 +60,16 @@ def initialize_database() -> None:
                 categoria              TEXT    NOT NULL,
                 codice_articolo        TEXT    NOT NULL,
                 lotto_id               TEXT    NOT NULL,
-                data_produzione        TEXT    NOT NULL
+                data_produzione        TEXT    NOT NULL,
+                operatore              TEXT    NOT NULL DEFAULT ''
             )
         """)
+        # Aggiunge la colonna operatore se il database esiste già senza di essa
+        try:
+            cursor.execute("ALTER TABLE Flussi_Ingresso ADD COLUMN operatore TEXT NOT NULL DEFAULT ''")
+        except sqlite3.OperationalError as e:
+            if "duplicate column name" not in str(e).lower():
+                raise
 
         # ---- Tabella anagrafica materiali ----
         cursor.execute("""
@@ -129,12 +136,14 @@ def insert_flusso(
     codice_articolo: str,
     lotto_id: str,
     data_produzione: str,
+    operatore: str = "",
 ) -> int:
     """
     Inserisce un nuovo record in Flussi_Ingresso.
     Restituisce l'ID del record appena creato.
 
     :param data_produzione: stringa in formato ISO (YYYY-MM-DD)
+    :param operatore: nome dell'operatore che effettua l'accettazione
     """
     timestamp = datetime.now().isoformat()
     with get_connection() as conn:
@@ -142,10 +151,10 @@ def insert_flusso(
         cursor.execute(
             """
             INSERT INTO Flussi_Ingresso
-                (timestamp_accettazione, categoria, codice_articolo, lotto_id, data_produzione)
-            VALUES (?, ?, ?, ?, ?)
+                (timestamp_accettazione, categoria, codice_articolo, lotto_id, data_produzione, operatore)
+            VALUES (?, ?, ?, ?, ?, ?)
             """,
-            (timestamp, categoria, codice_articolo, lotto_id, data_produzione),
+            (timestamp, categoria, codice_articolo, lotto_id, data_produzione, operatore),
         )
         conn.commit()
         return cursor.lastrowid

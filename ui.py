@@ -138,7 +138,10 @@ _FONT_FIELD    = QFont("Segoe UI", 16)
 _FONT_SCAN     = QFont("Segoe UI", 18)
 _FONT_SAVE     = QFont("Segoe UI", 18, QFont.Bold)
 _FONT_BADGE    = QFont("Segoe UI", 13, QFont.Bold)
-_FONT_TOAST    = QFont("Segoe UI", 13)
+_FONT_TOAST    = QFont("Segoe UI", 15, QFont.Bold)
+
+_TOAST_SUCCESS_DURATION_MS = 2500
+_TOAST_ERROR_DURATION_MS   = 3000
 
 
 def _field_style(border_color: str = "#90a4ae") -> str:
@@ -193,6 +196,12 @@ class MainWindow(QMainWindow):
         self._toast_timer.setSingleShot(True)
         self._toast_timer.timeout.connect(self._hide_toast)
 
+        # Debounce: prevents double-submissions from scanner trailing keystrokes
+        self._locked: bool = False
+        self._lock_timer = QTimer(self)
+        self._lock_timer.setSingleShot(True)
+        self._lock_timer.timeout.connect(self._unlock)
+
         self._build_ui()
         # Focus sul campo scan all'avvio
         QTimer.singleShot(0, self._scan_input.setFocus)
@@ -220,9 +229,9 @@ class MainWindow(QMainWindow):
         self._toast = QLabel()
         self._toast.setFont(_FONT_TOAST)
         self._toast.setAlignment(Qt.AlignCenter)
-        self._toast.setMinimumHeight(48)
+        self._toast.setMinimumHeight(60)
         self._toast.setStyleSheet("""
-            background-color: #2e7d32;
+            background-color: #1B5E20;
             color: white;
             padding: 10px 20px;
         """)
@@ -274,7 +283,25 @@ class MainWindow(QMainWindow):
         card_layout.setSpacing(20)
         content_layout.addWidget(card)
 
-        # ---- B) Campo scansione ----
+        # ---- B) Campo OPERATORE (sticky – non resettato) ----
+        op_label = QLabel("OPERATORE")
+        op_label.setFont(_FONT_LABEL)
+        op_label.setStyleSheet("color: #1a1a2e;")
+        card_layout.addWidget(op_label)
+
+        self._operatore_combo = QComboBox()
+        self._operatore_combo.setFont(_FONT_FIELD)
+        self._operatore_combo.setMinimumHeight(48)
+        self._operatore_combo.setEditable(True)
+        self._operatore_combo.addItems(["Operatore 1", "Operatore 2", "Operatore 3"])
+        self._operatore_combo.setCurrentIndex(-1)
+        self._operatore_combo.lineEdit().setPlaceholderText("Seleziona o digita il nome operatore...")
+        self._operatore_combo.setStyleSheet(_field_style("#90a4ae"))
+        card_layout.addWidget(self._operatore_combo)
+
+        card_layout.addSpacing(12)
+
+        # ---- C) Campo scansione ----
         scan_label = QLabel("CODICE ARTICOLO")
         scan_label.setFont(_FONT_LABEL)
         scan_label.setStyleSheet("color: #1a1a2e;")
@@ -429,6 +456,8 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------
     def _on_scan_enter(self) -> None:
         """Chiamato quando si preme Enter nel campo codice articolo."""
+        if self._locked:
+            return
         codice = self._scan_input.text().strip()
         cat = detect_categoria(codice)
         self._set_categoria(cat)
@@ -476,9 +505,14 @@ class MainWindow(QMainWindow):
     # Salvataggio
     # ------------------------------------------------------------------
     def _salva(self) -> None:
+        # Debounce: ignore calls during the 500ms lock window
+        if self._locked:
+            return
+
         codice = self._scan_input.text().strip()
         lotto  = self._lotto_input.text().strip()
         data_str = self._data_edit.date().toString("yyyy-MM-dd")
+        operatore = self._operatore_combo.currentText().strip()
 
         # Determina la categoria finale (manuale o rilevata)
         if self._cat_combo.isVisible():
@@ -486,17 +520,17 @@ class MainWindow(QMainWindow):
 
         # Validazione
         if not codice:
-            self._mostra_avviso("Il campo «Codice Articolo» è obbligatorio.")
+            self._show_toast("⚠  Il campo «Codice Articolo» è obbligatorio.", error=True)
             self._scan_input.setFocus()
             return
         if not lotto:
-            self._mostra_avviso("Il campo «Lotto N°» è obbligatorio.")
+            self._show_toast("⚠  Il campo «Lotto N°» è obbligatorio.", error=True)
             self._lotto_input.setFocus()
             return
         if not self._categoria:
-            self._mostra_avviso(
-                "Categoria non rilevata.\n"
-                "Scansiona un codice riconosciuto oppure seleziona la categoria manualmente."
+            self._show_toast(
+                "⚠  Categoria non rilevata. Scansiona un codice o seleziona la categoria manualmente.",
+                error=True,
             )
             self._scan_input.setFocus()
             return
@@ -508,29 +542,44 @@ class MainWindow(QMainWindow):
                 codice_articolo=codice,
                 lotto_id=lotto,
                 data_produzione=data_str,
+                operatore=operatore,
             )
         except Exception as exc:
             self._mostra_avviso(f"Errore durante il salvataggio:\n{exc}")
             return
 
-        # ---- F) Toast di successo (non bloccante) ----
+        # ---- Toast di successo (non bloccante) ----
         self._show_toast(
             f"✅  Registrato: {codice}  |  Lotto: {lotto}  |  ID: {record_id}"
         )
 
-        # Reset form
+        # Attiva il debounce per 500ms dopo il salvataggio
+        self._locked = True
+        self._lock_timer.start(500)
+
+        # Reset form (operatore NON viene resettato)
         self._reset_form()
 
     # ------------------------------------------------------------------
     # Toast notification
     # ------------------------------------------------------------------
-    def _show_toast(self, messaggio: str, durata_ms: int = 2500) -> None:
+    def _show_toast(self, messaggio: str, durata_ms: int = _TOAST_SUCCESS_DURATION_MS, error: bool = False) -> None:
+        bg_color = "#C62828" if error else "#1B5E20"
+        self._toast.setStyleSheet(f"""
+            background-color: {bg_color};
+            color: white;
+            padding: 10px 20px;
+        """)
         self._toast.setText(messaggio)
         self._toast.show()
-        self._toast_timer.start(durata_ms)
+        self._toast_timer.start(_TOAST_ERROR_DURATION_MS if error else durata_ms)
 
     def _hide_toast(self) -> None:
         self._toast.hide()
+
+    def _unlock(self) -> None:
+        """Chiamato dal timer 500ms dopo un salvataggio per riabilitare l'input."""
+        self._locked = False
 
     # ------------------------------------------------------------------
     # Reset form
@@ -548,6 +597,7 @@ class MainWindow(QMainWindow):
             padding: 6px 14px;
         """)
         self._cat_combo.hide()
+        # OPERATORE non viene resettato: rimane impostato per tutto il turno
         # Focus torna al campo scan
         self._scan_input.setFocus()
 
