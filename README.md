@@ -306,7 +306,7 @@ Possible improvements:
 
 # 📄 License
 
-Specify your license here (for example MIT).
+MIT.
 
 ---
 
