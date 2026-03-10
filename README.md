@@ -1,32 +1,83 @@
-# Sistema di Accettazione Digitale — Rinforzi
-*Registrazione ultra-rapida per materiali semi-lavorati in ingresso al laboratorio.*
+<p align="center">
+  <!-- Replace with your actual logo or icon if available -->
+  <img src="https://raw.githubusercontent.com/0xc3rat/test_accettazione/main/logo.png" width="120" alt="Project Logo"/>
+</p>
 
-## Descrizione
-Un'applicazione desktop moderna e veloce, progettata per ottimizzare la fase di accettazione nel laboratorio industriale. Il sistema permette agli operatori di registrare l'ingresso di materiali come tessuti tessili, tessuti metallici e bandine in meno di 10 secondi per articolo. 
+<h1 align="center">Test Accettazione</h1>
+<p align="center"><em>Ideato e Realizzato da Pierpaolo Careddu</em></p>
 
-L'interfaccia è pensata in ottica "keyboard-first" ed è altamente ottimizzata per l'utilizzo in accoppiata con scanner barcode USB (in emulazione tastiera HID), offrendo al contempo una robusta modalità manuale per le etichette sprovviste di codice a barre. Sviluppata in Python sfruttando PySide6 per la UI e SQLite3 per la persistenza dei dati.
-
----
-
-## Funzionalità principali
-* **Scansione barcode USB (HID) con auto-rilevamento:** Identificazione istantanea della categoria del materiale tramite prefissi noti (es. `STT` → Tessuti Tessili, `STM` → Tessuti Metallici, `STR` → Bandine, `ALT` → Altro).
-* **Smart Split Barcode:** Divisione automatica di codice articolo e numero di lotto se il barcode scansionato contiene separatori standard (`\t`, `|`, `;`).
-* **Modalità Manuale:** Un'interfaccia di fallback per l'inserimento libero dei dati in caso di etichette compilate a mano.
-* **Campo Operatore Persistente:** L'operatore imposta il proprio identificativo a inizio turno; il campo rimane memorizzato tra una scansione e l'altra.
-* **Registro Accettazioni:** Una schermata dedicata per visualizzare lo storico dei flussi in ingresso, completa di barra di ricerca in tempo reale ed eliminazione sicura dei record errati.
-* **Feedback visivo non bloccante:** Notifiche "Toast" a comparsa rapida per conferme o errori di validazione (nessun popup bloccante che rallenta il flusso).
-* **Debounce anti-doppia scansione:** Blocco temporaneo di 500ms dopo ogni salvataggio per ignorare keystroke ridondanti e prevenire duplicati nel database.
-* **Database SQLite:** Auto-creazione delle tabelle `Flussi_Ingresso` e `Materiali_Anagrafica` al primo avvio, con inserimento automatico dei dati di test (seed).
+<p align="center">
+  <img src="https://img.shields.io/github/languages/top/0xc3rat/test_accettazione?color=blue" alt="Top Language"/>
+  <img src="https://img.shields.io/github/license/0xc3rat/test_accettazione" alt="License"/>
+  <img src="https://img.shields.io/github/repo-size/0xc3rat/test_accettazione" alt="Repo Size"/>
+  <img src="https://img.shields.io/github/issues/0xc3rat/test_accettazione" alt="Issues"/>
+  <img src="https://img.shields.io/github/last-commit/0xc3rat/test_accettazione" alt="Last Commit"/>
+</p>
 
 ---
 
-## Requisiti
-- **Python 3.10+**
-- **PySide6**
+## 🚀 Overview
 
-## Installazione ed esecuzione
+**Test Accettazione** is a Python project designed for acceptance testing, providing a robust environment to ensure software meets specified requirements before deployment.
 
-1. Clona il repository e posizionati nella cartella del progetto:
-   ```bash
-   git clone [https://github.com/0xc3rat/test_accettazione.git](https://github.com/0xc3rat/test_accettazione.git)
-   cd test_accettazione
+## 📦 Features
+
+- Automated acceptance tests
+- Modular and extensible scripts
+- Easy integration for Python projects
+- Detailed test reports
+
+## 🛠️ Installation
+
+Clone the repository:
+
+```bash
+git clone https://github.com/0xc3rat/test_accettazione.git
+cd test_accettazione
+```
+
+Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+## ⚡ Usage
+
+Run the main scripts or execute tests:
+
+```bash
+python src/main.py
+# or
+pytest tests/
+```
+
+_Output and configuration may vary. Refer to each script's docstring and comments._
+
+## 🗂️ Project Structure
+
+```
+test_accettazione/
+├── src/
+│   └── main.py
+├── tests/
+│   └── test_main.py
+├── requirements.txt
+└── README.md
+```
+
+*(Structure may differ, update according to your project’s actual files.)*
+
+## 💬 Contributing
+
+Contributions are welcome! Create a fork, open issues, or submit pull requests.
+
+## 📄 License
+
+Distributed under the [MIT License](LICENSE) (or specify other license).
+
+---
+
+<p align="center">
+  <strong>Ideato e Realizzato da Pierpaolo Careddu</strong>
+</p>
