@@ -14,26 +14,26 @@ DB_PATH = Path(__file__).parent / "accettazione.db"
 # ---------------------------------------------------------------------------
 _SEED_DATA = [
     # (categoria, codice_articolo)
-    ("TESSUTI TESSILI",   "TT-001"),
-    ("TESSUTI TESSILI",   "TT-002"),
-    ("TESSUTI TESSILI",   "TT-003"),
-    ("TESSUTI TESSILI",   "TT-004"),
-    ("TESSUTI TESSILI",   "TT-005"),
-    ("TESSUTI METALLICI", "TM-001"),
-    ("TESSUTI METALLICI", "TM-002"),
-    ("TESSUTI METALLICI", "TM-003"),
-    ("TESSUTI METALLICI", "TM-004"),
-    ("TESSUTI METALLICI", "TM-005"),
-    ("BANDINE",           "BA-001"),
-    ("BANDINE",           "BA-002"),
-    ("BANDINE",           "BA-003"),
-    ("BANDINE",           "BA-004"),
-    ("BANDINE",           "BA-005"),
-    ("ALTRO",             "AL-001"),
-    ("ALTRO",             "AL-002"),
-    ("ALTRO",             "AL-003"),
-    ("ALTRO",             "AL-004"),
-    ("ALTRO",             "AL-005"),
+    ("TESSUTI TESSILI",   "STT0962A0"),
+    ("TESSUTI TESSILI",   "STT0845B1"),
+    ("TESSUTI TESSILI",   "STT1120C3"),
+    ("TESSUTI TESSILI",   "STT0500D2"),
+    ("TESSUTI TESSILI",   "STT0773E4"),
+    ("TESSUTI METALLICI", "STM0210A0"),
+    ("TESSUTI METALLICI", "STM0315B1"),
+    ("TESSUTI METALLICI", "STM0428C2"),
+    ("TESSUTI METALLICI", "STM0590D3"),
+    ("TESSUTI METALLICI", "STM0102E4"),
+    ("BANDINE",           "STR0100A0"),
+    ("BANDINE",           "STR0250B1"),
+    ("BANDINE",           "STR0375C2"),
+    ("BANDINE",           "STR0480D3"),
+    ("BANDINE",           "STR0620E4"),
+    ("ALTRO",             "ALT0010A0"),
+    ("ALTRO",             "ALT0020B1"),
+    ("ALTRO",             "ALT0030C2"),
+    ("ALTRO",             "ALT0040D3"),
+    ("ALTRO",             "ALT0050E4"),
 ]
 
 
@@ -82,6 +82,32 @@ def initialize_database() -> None:
             )
 
         conn.commit()
+
+
+def lookup_categoria_by_codice(codice: str) -> str | None:
+    """
+    Cerca il codice articolo esatto in Materiali_Anagrafica e
+    restituisce la categoria corrispondente, o None se non trovata.
+    """
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT categoria FROM Materiali_Anagrafica WHERE codice_articolo = ? LIMIT 1",
+            (codice,),
+        )
+        row = cursor.fetchone()
+        return row["categoria"] if row else None
+
+
+def get_all_codici() -> list[str]:
+    """
+    Restituisce tutti i codici articolo presenti in Materiali_Anagrafica
+    (usato per popolare il completatore nella schermata di scansione).
+    """
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT codice_articolo FROM Materiali_Anagrafica ORDER BY codice_articolo")
+        return [row["codice_articolo"] for row in cursor.fetchall()]
 
 
 def get_codici_by_categoria(categoria: str) -> list[str]:
