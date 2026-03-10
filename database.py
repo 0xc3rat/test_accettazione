@@ -158,3 +158,44 @@ def insert_flusso(
         )
         conn.commit()
         return cursor.lastrowid
+
+
+def get_all_flussi(limit: int = 500) -> list[dict]:
+    """
+    Restituisce i `limit` record più recenti da Flussi_Ingresso,
+    ordinati per timestamp_accettazione DESC (più recenti prima).
+    Ogni riga è restituita come dizionario.
+    """
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT id, timestamp_accettazione, operatore, categoria,
+                   codice_articolo, lotto_id, data_produzione
+            FROM Flussi_Ingresso
+            ORDER BY timestamp_accettazione DESC
+            LIMIT ?
+            """,
+            (limit,),
+        )
+        return [dict(row) for row in cursor.fetchall()]
+
+
+def delete_flusso(record_id: int) -> bool:
+    """
+    Elimina un singolo record da Flussi_Ingresso per ID.
+    Restituisce True se una riga è stata eliminata, False altrimenti.
+    """
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM Flussi_Ingresso WHERE id = ?", (record_id,))
+        conn.commit()
+        return cursor.rowcount > 0
+
+
+def get_flussi_count() -> int:
+    """Restituisce il conteggio totale dei record in Flussi_Ingresso."""
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM Flussi_Ingresso")
+        return cursor.fetchone()[0]
